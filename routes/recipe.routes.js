@@ -10,38 +10,43 @@ router.post('/create', async (req, res) => {
   try {
     const { title, description, point, image, isChecked, isDone, isCooking } = req.body;
 
-    if (!title || !description) {
-      return res.status(400).json({ message: 'Title and description are required' });
+    // Перевірка обов'язкових полів
+    if (!title) {
+      return res.status(400).json({ message: 'Назва рецепту є обов`язковою', type: 'title' });
     }
 
-    if (!image) {
-      return res.status(400).json({ message: 'Image is required' });
+    if (!point) {
+      return res.status(400).json({ message: 'Оцінка рецепту є обов`язковою', type: 'point' });
     }
 
-    let buffer;
-    if (image.startsWith('data:image/')) {
-      const base64Data = image.split(';base64,').pop(); // Відокремлюємо base64
-      buffer = Buffer.from(base64Data, 'base64'); // Створюємо буфер
-    } else {
-      return res.status(400).json({ message: 'Unsupported image format' });
+    let finalImage = null;
+
+    // Обробка зображення, якщо воно вказане
+    if (image) {
+      if (image.startsWith('data:image/')) {
+        const base64Data = image.split(';base64,').pop(); // Відокремлюємо base64
+        const buffer = Buffer.from(base64Data, 'base64'); // Створюємо буфер
+
+        // Конвертуємо зображення в підтримуваний формат
+        const compressedImageBuffer = await sharp(buffer)
+          .toFormat('jpeg') // Конвертуємо в JPEG
+          .resize(400) // Зменшуємо розмір до 400px
+          .jpeg({ quality: 80 }) // Стискаємо з якістю 80%
+          .toBuffer();
+
+        // Перетворюємо буфер назад у base64
+        const compressedImageBase64 = compressedImageBuffer.toString('base64');
+        finalImage = `data:image/jpeg;base64,${compressedImageBase64}`;
+      } else {
+        return res.status(400).json({ message: 'Unsupported image format' });
+      }
     }
 
-    // Конвертуємо зображення в підтримуваний формат
-    const compressedImageBuffer = await sharp(buffer)
-      .toFormat('jpeg') // Конвертуємо в JPEG
-      .resize(400) // Зменшуємо розмір до 800px
-      .jpeg({ quality: 80 }) // Стискаємо з якістю 80%
-      .toBuffer();
-
-
-    // Перетворюємо буфер назад у base64
-    const compressedImageBase64 = compressedImageBuffer.toString('base64');
-    const finalImage = `data:image/jpeg;base64,${compressedImageBase64}`;
-
+    // Створення нового рецепту
     const newRecipe = new Recipe({
       title,
       description,
-      image: finalImage,  // Додаємо оброблене зображення
+      image: finalImage, // Може бути null, якщо зображення відсутнє
       point,
       isDone,
       isCooking,
@@ -56,6 +61,7 @@ router.post('/create', async (req, res) => {
     res.status(500).json({ message: 'Something went wrong while creating the recipe' });
   }
 });
+
 
 // Маршрут для оновлення рецепту по ID
 router.put('/update/:id', async (req, res) => {
