@@ -14,34 +14,34 @@ router.post('/create', async (req, res) => {
       return res.status(400).json({ message: 'Title and description are required' });
     }
 
-    // if (!image) {
-    //   return res.status(400).json({ message: 'Image is required' });
-    // }
+    if (!image) {
+      return res.status(400).json({ message: 'Image is required' });
+    }
 
-    // let buffer;
-    // if (image.startsWith('data:image/')) {
-    //   const base64Data = image.split(';base64,').pop(); // Відокремлюємо base64
-    //   buffer = Buffer.from(base64Data, 'base64'); // Створюємо буфер
-    // } else {
-    //   return res.status(400).json({ message: 'Unsupported image format' });
-    // }
+    let buffer;
+    if (image.startsWith('data:image/')) {
+      const base64Data = image.split(';base64,').pop(); // Відокремлюємо base64
+      buffer = Buffer.from(base64Data, 'base64'); // Створюємо буфер
+    } else {
+      return res.status(400).json({ message: 'Unsupported image format' });
+    }
 
-    // // Конвертуємо зображення в підтримуваний формат
-    // const compressedImageBuffer = await sharp(buffer)
-    //   .toFormat('jpeg') // Конвертуємо в JPEG
-    //   .resize(400) // Зменшуємо розмір до 800px
-    //   .jpeg({ quality: 80 }) // Стискаємо з якістю 80%
-    //   .toBuffer();
+    // Конвертуємо зображення в підтримуваний формат
+    const compressedImageBuffer = await sharp(buffer)
+      .toFormat('jpeg') // Конвертуємо в JPEG
+      .resize(400) // Зменшуємо розмір до 800px
+      .jpeg({ quality: 80 }) // Стискаємо з якістю 80%
+      .toBuffer();
 
 
-    // // Перетворюємо буфер назад у base64
-    // const compressedImageBase64 = compressedImageBuffer.toString('base64');
-    // const finalImage = `data:image/jpeg;base64,${compressedImageBase64}`;
+    // Перетворюємо буфер назад у base64
+    const compressedImageBase64 = compressedImageBuffer.toString('base64');
+    const finalImage = `data:image/jpeg;base64,${compressedImageBase64}`;
 
     const newRecipe = new Recipe({
       title,
       description,
-      image, // Додаємо оброблене зображення
+      image: finalImage,  // Додаємо оброблене зображення
       point,
       isDone,
       isCooking,
