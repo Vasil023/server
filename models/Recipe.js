@@ -9,7 +9,7 @@ const recipeSchema = new mongoose.Schema({
   isCooking: { type: Boolean, default: false },
   point: { type: Number, required: true },
   isChecked: { type: Boolean, default: false },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  user: { type: Object, required: false }
 
 });
 

@@ -2,13 +2,21 @@
 const { Router } = require('express');
 const sharp = require('sharp');
 const Recipe = require('../models/Recipe');
+const User = require('../models/User');
 const router = Router();
 
 
 // Маршрут для створення рецепту з перевіркою формату
 router.post('/create', async (req, res) => {
   try {
-    const { title, description, point, id, image, isChecked, isDone, isCooking } = req.body;
+    const { title, description, point, id, image, isChecked, isDone, isCooking, user } = req.body;
+
+    // Перевіряємо, чи існує користувач
+    const userID = await User.findById(user);
+
+    if (!userID) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     // Перевірка обов'язкових полів
     if (!title) {
@@ -49,7 +57,9 @@ router.post('/create', async (req, res) => {
       point: point || Math.floor(Math.random() * (50 - 10 + 1)) + 10,
       isDone: isDone || false,
       isCooking: isCooking || false,
-      isChecked: isChecked || false
+      isChecked: isChecked || false,
+      user: userID
+
     });
 
     await newRecipe.save();
