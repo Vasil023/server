@@ -8,15 +8,11 @@ const router = Router();
 // Маршрут для створення рецепту з перевіркою формату
 router.post('/create', async (req, res) => {
   try {
-    const { title, description, point, image, isChecked, isDone, isCooking } = req.body;
+    const { title, description, point, id, image, isChecked, isDone, isCooking } = req.body;
 
     // Перевірка обов'язкових полів
     if (!title) {
       return res.status(400).json({ message: 'Назва рецепту є обов`язковою', type: 'title' });
-    }
-
-    if (!point) {
-      return res.status(400).json({ message: 'Оцінка рецепту є обов`язковою', type: 'point' });
     }
 
     let finalImage = null;
@@ -38,19 +34,22 @@ router.post('/create', async (req, res) => {
         const compressedImageBase64 = compressedImageBuffer.toString('base64');
         finalImage = `data:image/jpeg;base64,${compressedImageBase64}`;
       } else {
-        return res.status(400).json({ message: 'Unsupported image format' });
+        // Якщо зображення не є base64, повертаємо помилку
+        finalImage = image
+        // return res.status(400).json({ message: 'Unsupported image format' });
       }
     }
 
     // Створення нового рецепту
     const newRecipe = new Recipe({
       title,
+      id,
       description,
       image: finalImage, // Може бути null, якщо зображення відсутнє
-      point,
-      isDone,
-      isCooking,
-      isChecked
+      point: point || Math.floor(Math.random() * (50 - 10 + 1)) + 10,
+      isDone: isDone || false,
+      isCooking: isCooking || false,
+      isChecked: isChecked || false
     });
 
     await newRecipe.save();
@@ -96,7 +95,7 @@ router.put('/update/:id', async (req, res) => {
 // Маршрут для отримання всіх рецептів
 router.get('/get-all', async (req, res) => {
   try {
-    const recipes = await Recipe.find(); // Отримуємо всі рецепти з бази даних
+    const recipes = await Recipe.find().sort({ _id: -1 }); // Отримуємо всі рецепти з бази даних
 
     if (!recipes || recipes.length === 0) {
       return res.json([]);
