@@ -9,6 +9,8 @@ const recipeSchema = new mongoose.Schema({
   isCooking: { type: Boolean, default: false },
   point: { type: Number, required: true },
   isChecked: { type: Boolean, default: false },
+  userCooked: { type: String, required: false, default: null },
+  userWaiting: { type: String, required: false, default: null },
   user: { type: Object, required: false }
 
 });
