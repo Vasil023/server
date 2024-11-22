@@ -14,6 +14,7 @@ router.post(
   '/register',
   [
     check('email', 'Некорректный email').isEmail(),
+    check('nickname', 'Некорректный никнейм').isLength({ min: 3 }),
     check('password', 'Минимальная длина пароля - 6 символов').isLength({ min: 6 })
   ],
   async (req, res) => {
@@ -21,6 +22,7 @@ router.post(
 
       // Перевірка помилок
       const errors = validationResult(req);
+
       if (!errors.isEmpty()) {
         return res.status(400).json({
           errors: errors.array(),
@@ -28,7 +30,9 @@ router.post(
         });
       }
 
-      const { email, password, role } = req.body;
+      const { email, nickname, password, role } = req.body;
+
+      console.log('email', email, 'nickname', nickname, 'password', password, 'role', role);
 
       // Перевірка, чи існує користувач
       const existingUser = await User.findOne({ email });
@@ -41,7 +45,7 @@ router.post(
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Створення нового користувача
-      const user = new User({ email, password: hashedPassword, role });
+      const user = new User({ email, nickname, password: hashedPassword, role });
 
       // Збереження користувача в базі даних
       await user.save();
@@ -50,10 +54,10 @@ router.post(
       const token = jwt.sign(
         { userId: user._id },
         process.env.JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: '7d' }
       );
 
-      res.status(201).json({ token, userId: user._id, message: 'Пользователь создан' });
+      res.status(201).json({ token, nickname, userId: user._id, message: 'Пользователь создан' });
     } catch (e) {
       res.status(500).json({ message: 'Ошибка сервера. Попробуйте снова' });
     }
@@ -91,10 +95,10 @@ router.post(
       const token = jwt.sign(
         { userId: user._id },
         process.env.JWT_SECRET || 'default_secret_key',
-        { expiresIn: '1h' }
+        { expiresIn: '7d' }
       );
 
-      res.json({ token, email: user.email, userId: user._id, point: user.point });
+      res.json({ token, nickname: user.nickname, email: user.email, userId: user._id, point: user.point });
     } catch (e) {
       console.error('Помилка логіну:', e.message);
       res.status(500).json({ message: 'Внутрішня помилка сервера' });
@@ -125,7 +129,6 @@ router.get('/get-user', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
-
 
 
 // Маршрут для оновлення поля "point"
