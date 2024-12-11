@@ -13,9 +13,9 @@ const authMiddleware = require('../middleware/auth')
 router.post(
   '/register',
   [
-    check('email', 'Некорректный email').isEmail(),
-    check('nickname', 'Некорректный никнейм').isLength({ min: 3 }),
-    check('password', 'Минимальная длина пароля - 6 символов').isLength({ min: 6 })
+    check('email', 'Некорректний email').isEmail(),
+    check('nickname', 'Некоректний никнейм').isLength({ min: 3 }),
+    check('password', 'Мінімальна довжина пароля - 6 символов').isLength({ min: 6 })
   ],
   async (req, res) => {
     try {
@@ -32,13 +32,11 @@ router.post(
 
       const { email, nickname, password, role } = req.body;
 
-      console.log('email', email, 'nickname', nickname, 'password', password, 'role', role);
-
       // Перевірка, чи існує користувач
       const existingUser = await User.findOne({ email });
 
       if (existingUser) {
-        return res.status(400).json({ message: 'Такий користувач уже існує', type: 'email' });
+        return res.status(400).json({ errors: [{ msg: 'Користувач з таким email вже існує', path: 'email' }] });
       }
 
       // Хешування пароля
@@ -74,22 +72,27 @@ router.post(
   async (req, res) => {
     try {
       const errors = validationResult(req);
+
       if (!errors.isEmpty()) {
-        return res.json({ errors: errors.array(), status: 400 });
+        return res.status(400).json({
+          errors: errors.array(),
+          message: 'Некорректные данные при регистрации'
+        });
       }
+
 
       const { email, password } = req.body;
 
       const user = await User.findOne({ email });
 
       if (!user) {
-        return res.status(400).json({ message: 'Користувача не знайдено', type: 'email' });
+        return res.status(400).json({ errors: [{ msg: 'Користувача не знайдено', path: 'email' }] });
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
 
       if (!isPasswordValid) {
-        return res.status(400).json({ message: 'Невірний пароль', type: 'password' });
+        return res.status(400).json({ errors: [{ msg: 'Невірний пароль', path: 'password' }] });
       }
 
       const token = jwt.sign(
